@@ -1,4 +1,5 @@
 os.loadAPI( "commandsPlus" )
+os.loadAPI( "async" )
 
 local tPlayers = commandsPlus.getNearbyPlayers( 10 )
 if #tPlayers == 0 then
@@ -116,7 +117,7 @@ function scanArea( x1, y1, z1, x2, y2, z2 )
           --print( "FOUND " .. name )
           tBlocksNeedScanning[ #tBlocksNeedScanning + 1 ] = {ix, iy, iz}
         else
-          --commands.execAsync( "setblock " .. ix .. " " .. iy .. " " .. iz .. " minecraft:air" )
+          --async.addCommand( "setblock " .. ix .. " " .. iy .. " " .. iz .. " minecraft:air" )
           --commands.setblock( ix, iy, iz, "minecraft:air" )
         end
 			end
@@ -131,7 +132,7 @@ function scanArea( x1, y1, z1, x2, y2, z2 )
       if result[ 1 ]:match( "did not change" ) then
         tAllInfo[ x ][ y ][ z ].blockdata = result[ 1 ]:match( "change: (.+)" ):gsub( "[xyz]:%-?%d+,", "" )
 	    end
-      --commands.execAsync( "setblock " .. x .. " " .. y .. " " .. z .. " minecraft:air" )
+      --async.addCommand( "setblock " .. x .. " " .. y .. " " .. z .. " minecraft:air" )
     end
   end
 
@@ -158,25 +159,29 @@ local tTracking, saveInfoOn = {}, {}
 local function main()
   while true do
     local x, y, z = commandsPlus.getPlayerPosition( playerName )
+
     for ix, t in pairs( info ) do
       for iy, t2 in pairs( t ) do
         for iz, info in pairs( t2 ) do
           local index = ix .. ":" .. iy .. ":" .. iz
           if math.sqrt( (ix - x)^2 + (iy - y)^2 + (iz - z)^2 ) < 5 then
-            if not tTracking[ index ] then
+            if not tTracking[ index ] then --if it's in range of the player and we've not set it already
               tTracking[ index ] = info
-              print( "SETTING BLOCK" )
+              print( "SETTING BLOCK" ) --set the block and add it to the tracking table
               local ok, result = commands.setblock( ix .. " " .. iy .. " " .. iz .. " " .. info.name .. " " .. info.metadata .. " replace " .. (info.blockdata or "") )
               print( result[ 1 ] )
             end
-          elseif tTracking[ index ] then
+          elseif tTracking[ index ] then --if it's not in range and we've set it
             print( "DELETING BLOCK" )
             tTracking[ index ] = false
-            saveInfoOn[ #saveInfoOn + 1 ] = {ix, iy, iz}
+            saveInfoOn[ #saveInfoOn + 1 ] = {ix, iy, iz} --save the state of it and erase
+          else --if it's not in range and we've not set it
+            async.addCommand( "setblock" .. ix .. " " .. iy .. " " .. iz .. " minecraft:air" ) --delete it randomly
           end
         end
       end
     end
+    print( "PASS COMPLETE" )
   end
 end
 
@@ -193,7 +198,7 @@ local function blocksaver()
           block.blockdata = result[ 1 ]:match( "change: (.+)" ):gsub( "[xyz]:%-?%d+,", "" )
         end
       end
-      commands.execAsync( "setblock " .. x .. " " .. y .. " " .. z .. " minecraft:air" )
+      async.addCommand( "setblock " .. x .. " " .. y .. " " .. z .. " minecraft:air" )
       info[ x ][ y ][ z ] = block
     end
     os.queueEvent( customEvent )
@@ -201,4 +206,4 @@ local function blocksaver()
   end
 end
 
-parallel.waitForAny( main, blocksaver )
+parallel.waitForAny( main, blocksaver, blocksaver, blocksaver, blocksaver, async.run )
