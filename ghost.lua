@@ -7,6 +7,9 @@ elseif #tPlayers > 1 then
 	error( "too many players in range", 0 )
 end
 local playerName = tPlayers[ 1 ]
+if playerName == "oeed" then
+  print( "Hello World! <<== fancy UI element for you" )
+end
 commands.scoreboard( "objectives add __click trigger clicky" )
 commands.scoreboard( "players add", playerName )
 commands.scoreboard( "players enable", playerName, "__click" )
