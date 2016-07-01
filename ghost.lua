@@ -141,6 +141,7 @@ end
 
 local info
 if not fs.exists( ".ghost" ) then
+  commands.exec( [[/give @p minecraft:written_book 1 0 {display:{Name:"Guide to your Ghost House!"},title:"Guide to your Ghost House",author:"KingofGamesYami",generation:0,pages:["{text:\"Selecting Your Area\",color:black,underlined:true,hoverEvent:{action:'show_text',value:\"How to select your the area to ghost\"},clickEvent:{action:'change_page',value:\"2\"},extra:[{text:\"\nRe-selecting Your Area\",color:black,underlined:true,hoverEvent:{action:'show_text',value:\"You may want to change the area you've selected.  This tells you how!\"},clickEvent:{action:'change_page',value:\"3\"}}]}","{text:\"When you run the program for the first time, a prompt will appear in chat.  Look at one corner of the area you wish to select, and click the prompt.  You will then be prompted for a second selection, this time look at the opposite corner of your area.\",color:black}","{text:\"Changing your selection is easy, simply delete the file '.ghost' from the computer.  Please note that all blocks that are not placed will be lost if you perform this action\",color:black}"]}]])
   info = scanArea( selectArea() )
   local file = fs.open( ".ghost", "w" )
   file.write( textutils.serialize( info ) )
