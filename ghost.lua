@@ -113,7 +113,7 @@ function scanArea( x1, y1, z1, x2, y2, z2 )
           --print( "FOUND " .. name )
           tBlocksNeedScanning[ #tBlocksNeedScanning + 1 ] = {ix, iy, iz}
         else
-          commands.execAsync( "setblock " .. ix .. " " .. iy .. " " .. iz .. " minecraft:air" )
+          --commands.execAsync( "setblock " .. ix .. " " .. iy .. " " .. iz .. " minecraft:air" )
           --commands.setblock( ix, iy, iz, "minecraft:air" )
         end
 			end
@@ -128,7 +128,7 @@ function scanArea( x1, y1, z1, x2, y2, z2 )
       if result[ 1 ]:match( "did not change" ) then
         tAllInfo[ x ][ y ][ z ].blockdata = result[ 1 ]:match( "change: (.+)" ):gsub( "[xyz]:%-?%d+,", "" )
 	    end
-      commands.execAsync( "setblock " .. x .. " " .. y .. " " .. z .. " minecraft:air" )
+      --commands.execAsync( "setblock " .. x .. " " .. y .. " " .. z .. " minecraft:air" )
     end
   end
 
@@ -136,17 +136,65 @@ function scanArea( x1, y1, z1, x2, y2, z2 )
   return tAllInfo
 end
 
-local info = scanArea( selectArea() )
-local file = fs.open( ".ghost", "w" )
-file.write( textutils.serialize( info ) )
-file.close()
+local info
+if not fs.exists( ".ghost" ) then
+  info = scanArea( selectArea() )
+  local file = fs.open( ".ghost", "w" )
+  file.write( textutils.serialize( info ) )
+  file.close()
+else
+  local file = fs.open( ".ghost", "r" )
+  info = textutils.unserialize( file.readAll() )
+  file.close()
+end
 
-sleep( 5 )
+local tTracking, saveInfoOn = {}, {}
 
-for ix, t in pairs( info ) do
-  for iy, t2 in pairs( t ) do
-    for iz, info in pairs( t2 ) do
-      commands.setblock( ix, iy, iz, info.name, info.metadata, "replace", info.blockdata )
+
+local function main()
+  while true do
+    local x, y, z = commandsPlus.getPlayerPosition( playerName )
+    for ix, t in pairs( info ) do
+      for iy, t2 in pairs( t ) do
+        for iz, info in pairs( t2 ) do
+          local index = ix .. ":" .. iy .. ":" .. iz
+          if math.sqrt( (ix - x)^2 + (iy - y)^2 + (iz - z)^2 ) < 5 then
+            if not tTracking[ index ] then
+              tTracking[ index ] = info
+              print( "SETTING BLOCK" )
+              local ok, result = commands.setblock( ix .. " " .. iy .. " " .. iz .. " " .. info.name .. " " .. info.metadata .. " replace " .. (info.blockdata or "") )
+              print( result[ 1 ] )
+            end
+          elseif tTracking[ index ] then
+            print( "DELETING BLOCK" )
+            tTracking[ index ] = false
+            saveInfoOn[ #saveInfoOn + 1 ] = {ix, iy, iz}
+          end
+        end
+      end
     end
   end
 end
+
+local customEvent = tostring{}
+
+local function blocksaver()
+  while true do
+    while #saveInfoOn > 0 do
+      local x, y, z = unpack( table.remove( saveInfoOn, 1 ) )
+      local block = commands.getBlockInfo( x, y, z )
+      if not block.name:match( "mineraft:" ) or tDataBlocks[ block.name ] then
+        local ok, result = commands.blockdata( x, y, z, {} )
+        if result[ 1 ]:match( "did not change" ) then
+          block.blockdata = result[ 1 ]:match( "change: (.+)" ):gsub( "[xyz]:%-?%d+,", "" )
+        end
+      end
+      commands.execAsync( "setblock " .. x .. " " .. y .. " " .. z .. " minecraft:air" )
+      info[ x ][ y ][ z ] = block
+    end
+    os.queueEvent( customEvent )
+    os.pullEvent( customEvent )
+  end
+end
+
+parallel.waitForAny( main, blocksaver )
