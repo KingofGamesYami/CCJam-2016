@@ -25,9 +25,9 @@ function selectArea()
   end
   commands.scoreboard( "players enable", playerName, "__click" )
   local x, y, z = commandsPlus.getObservedBlock( playerName )
-  print( "X: " .. x )
-  print( "Y: " .. y )
-  print( "Z: " .. z )
+  -- print( "X: " .. x )
+  -- print( "Y: " .. y )
+  -- print( "Z: " .. z )
   commands.tellraw( playerName, '["",{"text":"Select point #2","underlined":true,"clickEvent":{"action":"run_command","value":"/trigger __click set 2"}}]' )
   while true do
   	local ok, result = commands.scoreboard( "players test", playerName, "__click 2 2" )
@@ -37,9 +37,9 @@ function selectArea()
   	sleep( 0.1 )
   end
   local x2, y2, z2 = commandsPlus.getObservedBlock( playerName )
-  print( "X2: " .. x2 )
-  print( "Y2: " .. y2 )
-  print( "Z2: " .. z2 )
+  -- print( "X2: " .. x2 )
+  -- print( "Y2: " .. y2 )
+  -- print( "Z2: " .. z2 )
   commands.gamerule( "commandBlockoutput true" )
   return x, y, z, x2, y2, z2
 end
@@ -110,17 +110,12 @@ function scanArea( x1, y1, z1, x2, y2, z2 )
 			for iz = minz, maxz do
         local name = tAllInfo[ ix ][ iy ][ iz ].name
         if not name:match( "minecraft:" ) or tDataBlocks[ name ] then
-          print( "FOUND " .. name )
+          --print( "FOUND " .. name )
           tBlocksNeedScanning[ #tBlocksNeedScanning + 1 ] = {ix, iy, iz}
+        else
+          commands.execAsync( "setblock " .. ix .. " " .. iy .. " " .. iz .. " minecraft:air" )
+          --commands.setblock( ix, iy, iz, "minecraft:air" )
         end
-
---        if tDataBlocks[ tAllInfo[ ix ][ iy ][ iz ].name ] then
---					local ok, result = commands.blockdata( ix, iy, iz, {} )
---          if result[ 1 ]:match( "did not change" ) then
---            tAllInfo[ ix ][ iy ][ iz ].blockdata = result[ 1 ]:match( "change: (.+)" ):gsub( "[xyz]:%-?%d+,", "" )
---          end
---        end
---        commands.setblock( ix, iy, iz, "minecraft:air" )
 			end
 		end
   end
@@ -128,14 +123,15 @@ function scanArea( x1, y1, z1, x2, y2, z2 )
   local function scanner()
     while #tBlocksNeedScanning > 0 do
       local coords = table.remove( tBlocksNeedScanning, 1 )
-      local ok, result = commands.blockdata( coords[ 1 ], coords[ 2 ], coords[ 3 ], {} )
+      local x, y, z = unpack( coords )
+      local ok, result = commands.blockdata( x, y, z, {} )
       if result[ 1 ]:match( "did not change" ) then
-        tAllInfo[ coords[ 1 ] ][ coords[ 2 ] ][ coords[ 3 ] ].blockdata = result[ 1 ]:match( "change: (.+)" ):gsub( "[xyz]:%-?%d+,", "" )
+        tAllInfo[ x ][ y ][ z ].blockdata = result[ 1 ]:match( "change: (.+)" ):gsub( "[xyz]:%-?%d+,", "" )
 	    end
-      local ok, err = commands.execAsync( "setblock", coords[ 1 ], coords[ 2 ], coords[ 3 ], "minecraft:air" )
-      if not ok then print( err[ 1 ] ) end
+      commands.execAsync( "setblock " .. x .. " " .. y .. " " .. z .. " minecraft:air" )
     end
   end
+
   parallel.waitForAll( scanner, scanner, scanner, scanner, scanner )
   return tAllInfo
 end
@@ -145,7 +141,7 @@ local file = fs.open( ".ghost", "w" )
 file.write( textutils.serialize( info ) )
 file.close()
 
-sleep( 20 )
+sleep( 5 )
 
 for ix, t in pairs( info ) do
   for iy, t2 in pairs( t ) do
