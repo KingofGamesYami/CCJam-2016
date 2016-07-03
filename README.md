@@ -1,6 +1,6 @@
 # CCJam-2016
 Repository for [CCJam 2016](http://www.computercraft.info/forums2/index.php?/topic/26906-get-ready-for-ccjam-2016/)
-
+##This program requires a command computer!
 Usage: remove .lua from all file names and run ghost.  You will recieve a book with further instructions in game.
 
 I would encourage you to select a small area, as large areas frequently fail, due to [this bug](http://www.computercraft.info/forums2/index.php?/topic/22068-17-task-complete-events-fail-to-fire/).
