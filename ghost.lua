@@ -176,7 +176,7 @@ local function main()
             tTracking[ index ] = false
             saveInfoOn[ #saveInfoOn + 1 ] = {ix, iy, iz} --save the state of it and erase
           else --if it's not in range and we've not set it
-            async.addCommand( "setblock" .. ix .. " " .. iy .. " " .. iz .. " minecraft:air" ) --delete it randomly
+            --async.addCommand( "setblock" .. ix .. " " .. iy .. " " .. iz .. " minecraft:air" ) --delete it randomly
           end
         end
       end
@@ -206,4 +206,4 @@ local function blocksaver()
   end
 end
 
-parallel.waitForAny( main, blocksaver, blocksaver, blocksaver, blocksaver, async.run )
+parallel.waitForAny( main, blocksaver, async.run )
